@@ -12,17 +12,23 @@ This is Airflow Projects.
 ./install_airflow.sh
 ```
 
-### 1-2. Install Python library
+### 1-2. Install Python Library
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Set Airflow Home
+### 2. Set Environment Variables
 ```bash
-export AIRFLOW_HOME={THIS_PROJECT_PATH}/airflow
+cp ./projects/config/.env.template ./projects/config/.env
+# And fill in the values of the variables
 ```
 
-### 3. Run Airflow Standalone
+### 3. Export Environment Variables
+```bash
+export $(cat ./projects/config/.env | xargs)
+```
+
+### 4. Run Airflow Standalone
 ```bash
 airflow standalone
 ```

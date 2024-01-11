@@ -1,8 +1,17 @@
 .DS_Store
 __pycache__
 
-airflow
+# env
+.env
 
-logs/dag_processor_manager
-logs/scheduler
-logs/dag_id=*
+# airflow
+airflow.cfg
+airflow.db
+airflow-webserver.pid
+standalone_admin_password.txt
+webserver_config.py
+
+# logs
+**/logs/dag_processor_manager
+**/logs/scheduler
+**/logs/dag_id=*
