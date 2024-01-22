@@ -1,9 +1,13 @@
+import datetime
 import html
-import pprint
+# import pprint
 import re
 import requests
+import sys
+import time
 import unicodedata
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
@@ -11,6 +15,14 @@ from bs4.element import Tag
 GOOGLE_TREND_RSS_URL = "https://trends.google.com/trends/trendingsearches/daily/rss?geo={GEOGRAPHY}"
 GEOGRAPHY_LIST = ["KR", "US"]
 
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def print_log(content: str, print_job_name: bool = False):
+    log = f"[{datetime.datetime.now().strftime(TIMESTAMP_FORMAT)}]"
+    if print_job_name:
+        log += f" [{sys._getframe(1).f_code.co_name}]"
+    print(log + f" {content}")
 
 def parse_google_trend_keyword(item: Tag):
     def _decoded_tag(tag: Tag):
@@ -52,7 +64,7 @@ def get_google_trend_keywords(geography: str) -> dict:
         return {}
     
     xml = response.content
-    soup = BeautifulSoup(xml, "lxml")
+    soup = BeautifulSoup(xml, "xml")
     
     items = soup.find_all("item")
 
@@ -74,5 +86,26 @@ def get_google_trend_keywords(geography: str) -> dict:
     return google_trend_keywords
 
 
-google_trend_keywords = get_google_trend_keywords("KR")
-pprint.pprint(google_trend_keywords)
+def google_trend_reporting_job():
+    print_log("Run google_trend_reporting_job")
+
+    print_log("Get google trend keywords", True)
+    google_trend_keywords = get_google_trend_keywords("KR")
+    # pprint.pprint(google_trend_keywords)
+    print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+
+    print_log("End google_trend_reporting_job")
+
+
+def main():
+    sched = BackgroundScheduler()
+    sched.add_job(google_trend_reporting_job, "cron", second="10", id="google_trend_reporting_job")
+    sched.start()
+
+
+if __name__ == "__main__":
+    main()
+
+    while True:
+        print_log("Process running..")
+        time.sleep(10)
