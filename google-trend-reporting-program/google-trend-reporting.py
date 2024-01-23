@@ -1,5 +1,6 @@
 import datetime
 import html
+import os
 # import pprint
 import re
 import requests
@@ -10,7 +11,11 @@ import unicodedata
 from apscheduler.schedulers.background import BackgroundScheduler
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from dotenv import load_dotenv
+from github import Auth, Github
 
+
+GITHUB_CONNECTION = None
 
 GOOGLE_TREND_RSS_URL = "https://trends.google.com/trends/trendingsearches/daily/rss?geo={GEOGRAPHY}"
 GEOGRAPHY_LIST = ["KR", "US"]
@@ -27,8 +32,8 @@ def print_log(content: str, print_job_name: bool = False):
 
 
 # Google trend function
-def parse_google_trend_keyword(item: Tag):
-    def _decoded_tag(tag: Tag):
+def parse_google_trend_keyword(item: Tag) -> dict:
+    def _decoded_tag(tag: Tag) -> str:
         text = html.unescape(tag.text)
         return unicodedata.normalize("NFKD", text)
 
@@ -89,6 +94,28 @@ def get_google_trend_keywords(geography: str) -> dict:
     return google_trend_keywords
 
 
+# Github function
+def get_github_connection() -> Github:
+    global GITHUB_CONNECTION
+
+    if GITHUB_CONNECTION is None:
+        load_dotenv()
+
+        auth = Auth.Token(f"{os.getenv('GITHUB_ACCESS_TOKEN')}")
+        GITHUB_CONNECTION = Github(auth=auth)
+
+    return GITHUB_CONNECTION
+
+def create_github_issue(content: dict):
+    conn = get_github_connection()
+
+    repo = conn.get_repo("brienzb/test")
+    repo.create_issue(
+        title=f"Test issue ({datetime.datetime.now()})",
+        body=str(content)
+    )
+
+
 # Job function
 def google_trend_reporting_job():
     print_log("Run google_trend_reporting_job")
@@ -97,6 +124,9 @@ def google_trend_reporting_job():
     google_trend_keywords = get_google_trend_keywords("KR")
     # pprint.pprint(google_trend_keywords)
     print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+
+    print_log("Create github issue", True)
+    create_github_issue(google_trend_keywords)
 
     print_log("End google_trend_reporting_job")
 
