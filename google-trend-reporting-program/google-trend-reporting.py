@@ -18,12 +18,15 @@ GEOGRAPHY_LIST = ["KR", "US"]
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
+# Common function
 def print_log(content: str, print_job_name: bool = False):
     log = f"[{datetime.datetime.now().strftime(TIMESTAMP_FORMAT)}]"
     if print_job_name:
         log += f" [{sys._getframe(1).f_code.co_name}]"
     print(log + f" {content}")
 
+
+# Google trend function
 def parse_google_trend_keyword(item: Tag):
     def _decoded_tag(tag: Tag):
         text = html.unescape(tag.text)
@@ -86,6 +89,7 @@ def get_google_trend_keywords(geography: str) -> dict:
     return google_trend_keywords
 
 
+# Job function
 def google_trend_reporting_job():
     print_log("Run google_trend_reporting_job")
 
@@ -97,6 +101,7 @@ def google_trend_reporting_job():
     print_log("End google_trend_reporting_job")
 
 
+# Main function
 def main():
     sched = BackgroundScheduler()
     sched.add_job(google_trend_reporting_job, "cron", second="10", id="google_trend_reporting_job")
