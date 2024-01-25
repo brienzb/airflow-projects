@@ -174,4 +174,4 @@ if __name__ == "__main__":
 
     while True:
         print_log("Process running..")
-        time.sleep(10)
+        time.sleep(600)
