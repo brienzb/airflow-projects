@@ -17,7 +17,12 @@ cp .env.template .env
 pip install -r requirements.txt
 ```
 
-### 3. Run
+### 3-1. Run in Local
 ```bash
 python google-trend-reporting.py
+```
+
+### 3-1. Run in Server
+```bash
+nohup python google-trend-reporting.py > google-trend-reporting.log 2>&1 &
 ```

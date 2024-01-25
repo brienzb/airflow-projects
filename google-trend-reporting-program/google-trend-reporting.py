@@ -9,6 +9,7 @@ import time
 import unicodedata
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from dotenv import load_dotenv
@@ -18,14 +19,14 @@ from github import Auth, Github
 GITHUB_CONNECTION = None
 
 GOOGLE_TREND_RSS_URL = "https://trends.google.com/trends/trendingsearches/daily/rss?geo={GEOGRAPHY}"
-GEOGRAPHY_LIST = ["KR", "US"]
+GEOGRAPHY_LIST = ["US", "KR"]
 
-TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
-
+LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+REPORT_DATE_FORMAT = "%Y-%m-%d"
 
 # Common function
 def print_log(content: str, print_job_name: bool = False):
-    log = f"[{datetime.datetime.now().strftime(TIMESTAMP_FORMAT)}]"
+    log = f"[{datetime.datetime.now().strftime(LOG_TIMESTAMP_FORMAT)}]"
     if print_job_name:
         log += f" [{sys._getframe(1).f_code.co_name}]"
     print(log + f" {content}")
@@ -63,7 +64,7 @@ def parse_google_trend_keyword(item: Tag) -> dict:
         "news": news,
     }
 
-def get_google_trend_keywords(geography: str) -> dict:
+def get_google_trend_keywords(geography: str) -> list:
     google_trend_url = GOOGLE_TREND_RSS_URL.replace("{GEOGRAPHY}", geography)
 
     response = requests.get(google_trend_url)
@@ -85,6 +86,8 @@ def get_google_trend_keywords(geography: str) -> dict:
             prev_approx_traffic_num = keyword["approx_traffic_num"]
         elif prev_approx_traffic_num < keyword["approx_traffic_num"]:
             break
+        else:
+            prev_approx_traffic_num = keyword["approx_traffic_num"]
 
         keyword["rank"] = rank
         google_trend_keywords.append(keyword)
@@ -106,27 +109,52 @@ def get_github_connection() -> Github:
 
     return GITHUB_CONNECTION
 
-def create_github_issue(content: dict):
-    conn = get_github_connection()
+def get_google_trend_report_body(geography: str, google_trend_keywords: list) -> str:
+    body = None
+    with open("./report.md.template", "r") as report_file:
+        body = report_file.read()
 
+    rows = ""
+    for keyword in google_trend_keywords:
+        rows += f"|{keyword['rank']}|{keyword['title']}|{keyword['approx_traffic']}|\n"
+
+    body = body.replace("{GEOGRAPHY}", geography)\
+               .replace("{ROWS}", rows)
+    
+    return body
+
+def create_github_issue(body: str) -> dict:
+    conn = get_github_connection()
     repo = conn.get_repo("brienzb/test")
-    repo.create_issue(
-        title=f"Test issue ({datetime.datetime.now()})",
-        body=str(content)
-    )
+
+    title = f"[GTRP] Google Trend Report ({datetime.datetime.now().strftime(REPORT_DATE_FORMAT)})"
+
+    repo.create_issue(title=title, body=body)
+    return {
+        "title": title,
+        "body": body,
+    }
 
 
 # Job function
 def google_trend_reporting_job():
     print_log("Run google_trend_reporting_job")
 
-    print_log("Get google trend keywords", True)
-    google_trend_keywords = get_google_trend_keywords("KR")
-    # pprint.pprint(google_trend_keywords)
-    print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+    report_bodys = ""
+    for geography in GEOGRAPHY_LIST:
+        print_log(f"Get {geography} google trend keywords", True)
+        google_trend_keywords = get_google_trend_keywords(geography)
+        print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+
+        print_log(f"Get {geography} google trend report body", True)
+        report_body = get_google_trend_report_body(geography, google_trend_keywords)
+        print_log(f"report_body: {report_body}", True)
+
+        report_bodys += report_body
 
     print_log("Create github issue", True)
-    create_github_issue(google_trend_keywords)
+    issue = create_github_issue(report_bodys)
+    print_log(f"issue: {issue}", True)
 
     print_log("End google_trend_reporting_job")
 
@@ -134,7 +162,10 @@ def google_trend_reporting_job():
 # Main function
 def main():
     sched = BackgroundScheduler()
-    sched.add_job(google_trend_reporting_job, "cron", second="10", id="google_trend_reporting_job")
+
+    trigger = CronTrigger(hour=10)
+    sched.add_job(google_trend_reporting_job, trigger, id="google_trend_reporting_job")
+
     sched.start()
 
 
