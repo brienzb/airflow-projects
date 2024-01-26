@@ -24,5 +24,5 @@ python google-trend-reporting.py
 
 ### 3-1. Run in Server
 ```bash
-nohup python google-trend-reporting.py > google-trend-reporting.log 2>&1 &
+nohup python google-trend-reporting.py > google-trend-reporting.log 2>&1 < /dev/null &
 ```
