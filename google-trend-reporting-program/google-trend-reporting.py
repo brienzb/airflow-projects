@@ -19,7 +19,7 @@ from github import Auth, Github
 PHASE = {
     "real": {
         "repo_name": "brienzb/test",
-        "trigger": CronTrigger(hour=10),
+        "trigger": CronTrigger(hour='10,22'),
         "sleep_time": 600,
     },
     "test": {
@@ -36,7 +36,7 @@ GOOGLE_TREND_RSS_URL = "https://trends.google.com/trends/trendingsearches/daily/
 GEOGRAPHY_LIST = ["US", "KR"]
 
 LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
-REPORT_DATE_FORMAT = "%Y-%m-%d"
+REPORT_DATE_FORMAT = "%Y-%m-%d %H"
 
 
 # Common function
@@ -52,7 +52,10 @@ def set_phase():
     
     print_log(f"Set phase: {PHASE_ARGV}")
 
-def print_log(content: str, print_job_name: bool = False):
+def print_log(content: str, print_job_name: bool = False, only_test: bool = False):
+    if only_test and PHASE_ARGV != "test":
+        return
+
     log = f"[{datetime.datetime.now().strftime(LOG_TIMESTAMP_FORMAT)}]"
     if print_job_name:
         log += f" [{sys._getframe(1).f_code.co_name}]"
@@ -143,7 +146,15 @@ def get_google_trend_report_body(geography: str, google_trend_keywords: list) ->
 
     rows = ""
     for keyword in google_trend_keywords:
-        rows += f"|{keyword['rank']}|{keyword['title']}|{keyword['approx_traffic']}|\n"
+        row = [str(keyword["rank"]), keyword["title"], keyword["approx_traffic"]]
+        
+        news_contents = []
+        for news in keyword["news"]:
+            news_contents.append(f"<a href='{news['url']}'>{news['title']}</a>")
+        row.append("<br>".join(news_contents))
+
+        print(row)
+        rows += "|".join(row) + "\n"
 
     body = body.replace("{GEOGRAPHY}", geography)\
                .replace("{ROWS}", rows)
@@ -152,11 +163,13 @@ def get_google_trend_report_body(geography: str, google_trend_keywords: list) ->
 
 def create_github_issue(body: str) -> dict:
     conn = get_github_connection()
+
     repo = conn.get_repo(PHASE[PHASE_ARGV]["repo_name"])
+    label = repo.get_label("GTRP")
 
     title = f"[GTRP] Google Trend Report ({datetime.datetime.now().strftime(REPORT_DATE_FORMAT)})"
 
-    repo.create_issue(title=title, body=body)
+    repo.create_issue(title=title, body=body, labels=[label])
     return {
         "title": title,
         "body": body,
@@ -169,19 +182,19 @@ def google_trend_reporting_job():
 
     report_bodys = ""
     for geography in GEOGRAPHY_LIST:
-        print_log(f"Get {geography} google trend keywords", True)
+        print_log(f"Get {geography} google trend keywords", print_job_name=True)
         google_trend_keywords = get_google_trend_keywords(geography)
-        # print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+        print_log(f"google_trend_keywords: {google_trend_keywords}", print_job_name=True, only_test=True)
 
-        print_log(f"Get {geography} google trend report body", True)
+        print_log(f"Get {geography} google trend report body", print_job_name=True)
         report_body = get_google_trend_report_body(geography, google_trend_keywords)
-        # print_log(f"report_body: {report_body}", True)
+        print_log(f"report_body: {report_body}", print_job_name=True, only_test=True)
 
         report_bodys += report_body
 
-    print_log("Create github issue", True)
+    print_log("Create github issue", print_job_name=True)
     issue = create_github_issue(report_bodys)
-    # print_log(f"issue: {issue}", True)
+    print_log(f"issue: {issue}", print_job_name=True, only_test=True)
 
     print_log("End google_trend_reporting_job")
 
