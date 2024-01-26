@@ -16,6 +16,20 @@ from dotenv import load_dotenv
 from github import Auth, Github
 
 
+PHASE = {
+    "real": {
+        "repo_name": "brienzb/test",
+        "trigger": CronTrigger(hour=10),
+        "sleep_time": 600,
+    },
+    "test": {
+        "repo_name": "brienzb/test",
+        "trigger": CronTrigger(second='0,30'),
+        "sleep_time": 10,
+    }
+}
+PHASE_ARGV = "test"
+
 GITHUB_CONNECTION = None
 
 GOOGLE_TREND_RSS_URL = "https://trends.google.com/trends/trendingsearches/daily/rss?geo={GEOGRAPHY}"
@@ -24,7 +38,20 @@ GEOGRAPHY_LIST = ["US", "KR"]
 LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 REPORT_DATE_FORMAT = "%Y-%m-%d"
 
+
 # Common function
+def set_phase():
+    global PHASE_ARGV
+    
+    if len(sys.argv) > 1:
+        PHASE_ARGV = sys.argv[1]
+    
+    if PHASE_ARGV not in PHASE:
+        print("Usage: python google-trend-reporting.py [test|real]")
+        exit(1)
+    
+    print_log(f"Set phase: {PHASE_ARGV}")
+
 def print_log(content: str, print_job_name: bool = False):
     log = f"[{datetime.datetime.now().strftime(LOG_TIMESTAMP_FORMAT)}]"
     if print_job_name:
@@ -125,7 +152,7 @@ def get_google_trend_report_body(geography: str, google_trend_keywords: list) ->
 
 def create_github_issue(body: str) -> dict:
     conn = get_github_connection()
-    repo = conn.get_repo("brienzb/test")
+    repo = conn.get_repo(PHASE[PHASE_ARGV]["repo_name"])
 
     title = f"[GTRP] Google Trend Report ({datetime.datetime.now().strftime(REPORT_DATE_FORMAT)})"
 
@@ -161,9 +188,10 @@ def google_trend_reporting_job():
 
 # Main function
 def main():
-    sched = BackgroundScheduler()
+    set_phase()
 
-    trigger = CronTrigger(hour=10)
+    sched = BackgroundScheduler()
+    trigger = PHASE[PHASE_ARGV]["trigger"]
     sched.add_job(google_trend_reporting_job, trigger, id="google_trend_reporting_job")
 
     sched.start()
@@ -174,4 +202,4 @@ if __name__ == "__main__":
 
     while True:
         print_log("Process running..")
-        time.sleep(600)
+        time.sleep(PHASE[PHASE_ARGV]["sleep_time"])

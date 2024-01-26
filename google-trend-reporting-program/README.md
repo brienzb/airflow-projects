@@ -19,10 +19,11 @@ pip install -r requirements.txt
 
 ### 3-1. Run in Local
 ```bash
-python google-trend-reporting.py
+python google-trend-reporting.py [test|real]
+# Even if you don't put a test as a parameter, it's done as a test by default
 ```
 
 ### 3-1. Run in Server
 ```bash
-nohup python -u google-trend-reporting.py > google-trend-reporting.log 2>&1 < /dev/null &
+nohup python -u google-trend-reporting.py real > google-trend-reporting.log 2>&1 < /dev/null &
 ```
