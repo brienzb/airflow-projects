@@ -144,17 +144,17 @@ def google_trend_reporting_job():
     for geography in GEOGRAPHY_LIST:
         print_log(f"Get {geography} google trend keywords", True)
         google_trend_keywords = get_google_trend_keywords(geography)
-        print_log(f"google_trend_keywords: {google_trend_keywords}", True)
+        # print_log(f"google_trend_keywords: {google_trend_keywords}", True)
 
         print_log(f"Get {geography} google trend report body", True)
         report_body = get_google_trend_report_body(geography, google_trend_keywords)
-        print_log(f"report_body: {report_body}", True)
+        # print_log(f"report_body: {report_body}", True)
 
         report_bodys += report_body
 
     print_log("Create github issue", True)
     issue = create_github_issue(report_bodys)
-    print_log(f"issue: {issue}", True)
+    # print_log(f"issue: {issue}", True)
 
     print_log("End google_trend_reporting_job")
 
