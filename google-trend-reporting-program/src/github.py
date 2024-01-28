@@ -1,9 +1,9 @@
-import datetime
 import os
 
 from dotenv import load_dotenv
-from github import Auth, Github
+from github import Auth, Github, Issue, IssueComment, Repository
 
+from src.common import *
 from src.config import *
 
 
@@ -17,6 +17,51 @@ def get_github_connection() -> Github:
         GITHUB_CONNECTION = Github(auth=auth)
 
     return GITHUB_CONNECTION
+
+def get_github_repo() -> Repository:
+    conn = get_github_connection()
+    return conn.get_repo(PHASE[PHASE_ARGV]["repo_name"])
+
+def get_github_labels() -> list:
+    repo = get_github_repo()
+    return [repo.get_label("GTRP")]
+
+def get_github_issue(target_date: str) -> Issue:
+    repo = get_github_repo()
+    labels = get_github_labels()
+
+    issues = repo.get_issues(state="open", labels=labels)
+
+    target_issue = None
+    for issue in sorted(issues, key=lambda x: x.title):
+        # Parse "[GTRP] Google Trend Report ({cmp_date})"
+        cmp_date = issue.title.split(" ")[4][1:-1]
+
+        if target_date == cmp_date:
+            target_issue = issue
+            break
+    
+    if target_issue is None:
+        target_issue = create_github_issue(target_date)
+    
+    return target_issue
+
+def create_github_issue(target_date: str) -> Issue:
+    repo = get_github_repo()
+    labels = get_github_labels()
+
+    issue = repo.create_issue(
+        title=GITHUB_ISSUE_TITLE.replace("{TARGET_DATE}", target_date),
+        body=GITHUB_ISSUE_BODY,
+        labels=labels
+    )
+
+    print_log(f"Create github issue: {issue.title} #{issue.number}")
+    return issue
+
+def create_github_issue_comment(issue: Issue, body: str) -> IssueComment:
+    return issue.create_comment(body)
+
 
 def get_google_trend_report_body(geography: str, google_trend_keywords: list) -> str:
     body = None
@@ -35,21 +80,7 @@ def get_google_trend_report_body(geography: str, google_trend_keywords: list) ->
         print(row)
         rows += "|".join(row) + "\n"
 
-    body = body.replace("{GEOGRAPHY}", geography)\
+    body = body.replace("{GEOGRAPHY}", GEOGRAPHY_DICT[geography]["name"])\
                .replace("{ROWS}", rows)
     
     return body
-
-def create_github_issue(body: str) -> dict:
-    conn = get_github_connection()
-
-    repo = conn.get_repo(PHASE[PHASE_ARGV]["repo_name"])
-    label = repo.get_label("GTRP")
-
-    title = f"[GTRP] Google Trend Report ({datetime.datetime.now().strftime(REPORT_DATE_FORMAT)})"
-
-    repo.create_issue(title=title, body=body, labels=[label])
-    return {
-        "title": title,
-        "body": body,
-    }

@@ -1,12 +1,13 @@
-import datetime
+import random
 import sys
 import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from src.common import print_log
+from src.common import *
 from src.config import *
-from src.job import google_trend_reporting_job_ver1
+from src.github import get_github_issue
+from src.job import google_trend_reporting_job
 
 
 def set_phase():
@@ -21,33 +22,42 @@ def set_phase():
     
     print_log(f"Set phase: {PHASE_ARGV}")
 
-def set_next_run_date():
+def set_geography_dict():
     global GEOGRAPHY_DICT
 
-    default_next_run_date = datetime.datetime.now()
-    if default_next_run_date.hour >= 22:
-        default_next_run_date += datetime.timedelta(days=1)
+    for geography in GEOGRAPHY_DICT.keys():
+        next_run_date = get_next_run_date(geography)
 
-    for key, value in GEOGRAPHY_DICT.items():
-        if key in ("KR", "JP"):
-            value["next_run_date"] = default_next_run_date.strftime(REPORT_DATE_FORMAT)
-        else:
-            value["next_run_date"] = (default_next_run_date - datetime.timedelta(days=1)).strftime(REPORT_DATE_FORMAT)
-        print_log(f"Set {key} next run date: {value['next_run_date']}")
+        GEOGRAPHY_DICT[geography]["next_run_date"] = next_run_date
+        print_log(f"Set {geography} next run date: {next_run_date}")
 
 def set_pre_issues():
-    pass
+    sorted_geography_dict = dict(sorted(GEOGRAPHY_DICT.items(), key=lambda x: x[1]["next_run_date"]))
+
+    for _, value in sorted_geography_dict.items():
+        issue = get_github_issue(value["next_run_date"])
+        print_log(f"Set github issue: {issue.title} #{issue.number}")
+
+def schedule_jobs() -> BackgroundScheduler:
+    sched = BackgroundScheduler()
+
+    for geography, value in GEOGRAPHY_DICT.items():
+        job_id = f"{geography}_google_trend_reporting_job"
+        trigger = value["trigger"] if PHASE_ARGV == "real" else CronTrigger(second=f"{random.randint(0, 59)}")
+        
+        sched.add_job(google_trend_reporting_job, trigger, args=[geography], id=job_id)
+        print_log(f"Set {job_id} (trigger: {trigger})")
+    
+    return sched
 
 
 # Main function
 def main():
     set_phase()
-    set_next_run_date()
+    set_geography_dict()
+    set_pre_issues()
 
-    sched = BackgroundScheduler()
-    trigger = PHASE[PHASE_ARGV]["trigger"]
-    sched.add_job(google_trend_reporting_job_ver1, trigger, id="google_trend_reporting_job_ver1")
-
+    sched = schedule_jobs()
     sched.start()
 
 
