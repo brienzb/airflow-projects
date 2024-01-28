@@ -1,5 +1,6 @@
 .DS_Store
-.env
 
-# google-trend-reporting-program
+.env
 *.log
+
+__pycache__/
