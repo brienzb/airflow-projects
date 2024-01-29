@@ -80,7 +80,6 @@ def get_google_trend_report_body(geography: str, google_trend_keywords: list) ->
             news_contents.append(f"<a href='{news['url']}'>{news['title']}</a>")
         row.append("<br>".join(news_contents))
 
-        print(row)
         rows += "|".join(row) + "\n"
 
     body = body.replace("{GEOGRAPHY}", GEOGRAPHY_DICT[geography]["name"])\
