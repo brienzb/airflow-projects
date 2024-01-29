@@ -16,7 +16,6 @@ PHASE = {
         "sleep_time": 10,  # 10 seconds
     }
 }
-PHASE_ARGV = "test"
 
 LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 REPORT_DATE_FORMAT = "%Y-%m-%d"
@@ -45,7 +44,6 @@ GEOGRAPHY_DICT = {
     },
 }
 
-GITHUB_CONNECTION = None
 GITHUB_ISSUE_TITLE = "[GTRP] Google Trend Report ({TARGET_DATE})"
 GITHUB_ISSUE_BODY = f"""
 In time for each country at 10 p.m., Google Trent Keyword Report will be published with this issue comment.

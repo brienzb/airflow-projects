@@ -1,11 +1,16 @@
 import datetime
 import sys
 
+from dotenv import load_dotenv
+
 from src.config import *
 
 
+load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
+
+
 def print_log(content: str, print_job_name: bool = False, only_test: bool = False):
-    if only_test and PHASE_ARGV != "test":
+    if only_test and os.getenv("PHASE") != "test":
         return
 
     log = f"[{datetime.datetime.now().strftime(LOG_TIMESTAMP_FORMAT)}]"

@@ -1,26 +1,22 @@
 import random
-import sys
 import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
 
 from src.common import *
 from src.config import *
-from src.github import get_github_issue
-from src.job import google_trend_reporting_job
+from src.github import get_github_issue, create_github_issue_comment
+from src.github import get_google_trend_report_body
+from src.google_trend import get_google_trend_keywords
 
 
-def set_phase():
-    global PHASE_ARGV
-    
-    if len(sys.argv) > 1:
-        PHASE_ARGV = sys.argv[1]
-    
-    if PHASE_ARGV not in PHASE:
-        print("Usage: python google-trend-reporting.py [test|real]")
-        exit(1)
-    
-    print_log(f"Set phase: {PHASE_ARGV}")
+load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
+
+
+# Setting function
+def print_phase():
+    print_log(f"Phase: {os.getenv('PHASE')}")
 
 def set_geography_dict():
     global GEOGRAPHY_DICT
@@ -38,12 +34,39 @@ def set_pre_issues():
         issue = get_github_issue(value["next_run_date"])
         print_log(f"Set github issue: {issue.title} #{issue.number}")
 
+
+# Job function
+def google_trend_reporting_job(geography: str):
+    global GEOGRAPHY_DICT
+
+    print_log(f"Run {geography}_google_trend_reporting_job", print_job_name=True)
+
+    google_trend_keywords = get_google_trend_keywords(geography)
+    print_log(f"Get {geography} google trend keywords", print_job_name=True)
+    print_log(f"google_trend_keywords: {google_trend_keywords}", print_job_name=True, only_test=True)
+
+    report_body = get_google_trend_report_body(geography, google_trend_keywords)
+    print_log(f"Get {geography} google trend report body", print_job_name=True)
+    print_log(f"report_body: {report_body}", print_job_name=True, only_test=True)
+
+    issue = get_github_issue(GEOGRAPHY_DICT[geography]["next_run_date"])
+    print_log(f"Get github issue: {issue.title} #{issue.number}", print_job_name=True)
+
+    issue_comment = create_github_issue_comment(issue, report_body)
+    print_log(f"Create github issue comment: {issue_comment}", print_job_name=True)
+
+    next_run_date = get_next_run_date(geography)
+    GEOGRAPHY_DICT[geography]["next_run_date"] = next_run_date
+    print_log(f"Set {geography} next run date: {next_run_date}", print_job_name=True)
+
+    print_log(f"End {geography}_google_trend_reporting_job", print_job_name=True)
+
 def schedule_jobs() -> BackgroundScheduler:
     sched = BackgroundScheduler()
 
     for geography, value in GEOGRAPHY_DICT.items():
         job_id = f"{geography}_google_trend_reporting_job"
-        trigger = value["trigger"] if PHASE_ARGV == "real" else CronTrigger(second=f"{random.randint(0, 59)}")
+        trigger = value["trigger"] if os.getenv("PHASE") == "real" else CronTrigger(second=f"{random.randint(0, 59)}")
         
         sched.add_job(google_trend_reporting_job, trigger, args=[geography], id=job_id)
         print_log(f"Set {job_id} (trigger: {trigger})")
@@ -53,7 +76,7 @@ def schedule_jobs() -> BackgroundScheduler:
 
 # Main function
 def main():
-    set_phase()
+    print_phase()
     set_geography_dict()
     set_pre_issues()
 
@@ -66,4 +89,4 @@ if __name__ == "__main__":
 
     while True:
         print_log("Process running..")
-        time.sleep(PHASE[PHASE_ARGV]["sleep_time"])
+        time.sleep(PHASE[os.getenv("PHASE")]["sleep_time"])

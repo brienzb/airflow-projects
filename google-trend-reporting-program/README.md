@@ -19,11 +19,12 @@ pip install -r requirements.txt
 
 ### 3-1. Run in Local
 ```bash
-python main.py [test|real]
-# Even if you don't put a test as a parameter, it's done as a test by default
+python main.py
 ```
 
 ### 3-2. Run in Server
 ```bash
-nohup python -u main.py real > google-trend-reporting-program.log 2>&1 < /dev/null &
+# Revise .env
+# PHASE="real" 
+nohup python -u main.py > google-trend-reporting-program.log 2>&1 < /dev/null &
 ```

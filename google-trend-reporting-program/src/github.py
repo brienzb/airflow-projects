@@ -7,11 +7,14 @@ from src.common import *
 from src.config import *
 
 
+GITHUB_CONNECTION = None
+load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
+
+
 def get_github_connection() -> Github:
     global GITHUB_CONNECTION
 
     if GITHUB_CONNECTION is None:
-        load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
 
         auth = Auth.Token(f"{os.getenv('GITHUB_ACCESS_TOKEN')}")
         GITHUB_CONNECTION = Github(auth=auth)
@@ -20,7 +23,7 @@ def get_github_connection() -> Github:
 
 def get_github_repo() -> Repository:
     conn = get_github_connection()
-    return conn.get_repo(PHASE[PHASE_ARGV]["repo_name"])
+    return conn.get_repo(PHASE[os.getenv("PHASE")]["repo_name"])
 
 def get_github_labels() -> list:
     repo = get_github_repo()
