@@ -8,7 +8,7 @@ TEMPLATE_PATH = os.path.join(BASE_PATH, "template")
 
 PHASE = {
     "real": {
-        "repo_name": "brienzb/test",
+        "repo_name": "brienzb/toy-box",
         "sleep_time": 600,  # 10 minutes
     },
     "test": {
