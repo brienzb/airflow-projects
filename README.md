@@ -2,4 +2,4 @@
 This repository is a space for simple toy projects.
 
 ## Todo
-- [ ] Google Trend Reporting Program
+- [x] Google Trend Reporting Program
