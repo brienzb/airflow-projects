@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 from src.common import *
 from src.config import *
-from src.github import get_github_issue, create_github_issue_comment
-from src.github import get_google_trend_report_body
+from src.github_conn import get_github_issue, create_github_issue_comment
+from src.github_conn import get_google_trend_report_body
 from src.google_trend import get_google_trend_keywords
 
 

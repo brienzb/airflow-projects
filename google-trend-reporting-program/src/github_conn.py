@@ -1,6 +1,5 @@
 import os
 
-from dotenv import load_dotenv
 from github import Auth, Github, Issue, IssueComment, Repository
 
 from src.common import *
@@ -8,7 +7,6 @@ from src.config import *
 
 
 GITHUB_CONNECTION = None
-load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
 
 
 def get_github_connection() -> Github:

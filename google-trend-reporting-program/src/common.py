@@ -1,12 +1,10 @@
 import datetime
+import os
 import sys
 
-from dotenv import load_dotenv
+from apscheduler.triggers.cron import CronTrigger
 
 from src.config import *
-
-
-load_dotenv(dotenv_path=os.path.join(BASE_PATH, ".env"))
 
 
 def print_log(content: str, print_job_name: bool = False, only_test: bool = False):
