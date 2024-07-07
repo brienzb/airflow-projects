@@ -30,6 +30,7 @@ python main.py
 # 1. Directly enter command
 nohup python -u main.py > google-trend-reporting-program.log 2>&1 < /dev/null &
 
-# 2. Run script
+# 2. Run script (in linux server)
+chmod +x ./gtrp.sh
 ./gtrp.sh
 ```
