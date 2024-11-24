@@ -26,6 +26,7 @@ class Word:
     initial_consonant: str  # 초성
     length: int             # 단어 길이
 
+
     def __init__(self, word: str):
         self.word = word
         self.pos = self._get_pos()
@@ -85,6 +86,7 @@ class WordManager:
     """
     word_list: list = []
 
+
     def __init__(self, komantle_no: int):
         url = f"{KOMANTLE_URL}/{komantle_no}"
 
@@ -139,6 +141,9 @@ class WordManager:
 
 
 def main():
+    # TODO: 메인 로직 복잡도 이슈
+    # - print 문 너무 많이 사용됨 -> 공통화 필요
+    # - while 및 if 문 너무 많이 사용됨 -> 간소화 필요
     print("      +----------------------------+")
     print("      | Hello I'm Komantle Helper! |")
     print("      +----------------------------+")
