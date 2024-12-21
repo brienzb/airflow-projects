@@ -2,13 +2,12 @@ from datetime import datetime
 import requests
 from zoneinfo import ZoneInfo
 
-from bs4 import BeautifulSoup
 from konlpy.tag import Okt
 
 
 SEOUL_TIME_ZONE = ZoneInfo("Asia/Seoul")
 
-KOMANTLE_URL = "https://semantle-ko.newsjel.ly/nearest1k"
+KOMANTLE_URL = "https://semantle-ko.newsjel.ly/top_scores"
 KOMANTLE_START_DATE = datetime(2022, 4, 1, tzinfo=SEOUL_TIME_ZONE)
 
 START_UNICODE = 0xAC00  # "가"
@@ -32,6 +31,10 @@ class Word:
         self.pos = self._get_pos()
         self.initial_consonant = self._get_initial_consonant()
         self.length = self._get_length()
+
+
+    def __repr__(self):
+        return f"Word(word: {self.word}, pos: {self.pos}, initial_consonant: {self.initial_consonant}, length: {self.length})"
 
 
     def _get_pos(self) -> str:
@@ -94,21 +97,15 @@ class WordManager:
         if response.status_code != 200:
             print(f"죄송합니다. {komantle_no}번째 꼬맨틀 정보를 찾을 수 없어 프로그램을 종료합니다.")
             exit(0)
+        data = response.json()
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        answer = soup.find("b", id="word").get_text(strip=True)
+        answer = data["key"]
         self.word_list.append({"word_id": 0, "word": Word(answer), "similarity": 100})
 
-        table = soup.find("table")
-        rows = table.find_all("tr")[1:]
-
-        for row in rows:
-            columns = row.find_all("td")
-
-            word_id = int(columns[0].get_text(strip=True))
-            word = Word(columns[1].get_text(strip=True))
-            similarity = float(columns[2].get_text(strip=True))
+        for top_score in data["top_scores"]:
+            word_id = int(top_score[0])
+            word = Word(top_score[1])
+            similarity = float(top_score[2])
 
             self.word_list.append({"word_id": word_id, "word": word, "similarity": similarity})
 
@@ -131,6 +128,11 @@ class WordManager:
 
     def get_similarity(self, word_id: int) -> float:
         return self._find_word(word_id)["similarity"]
+
+    
+    def get_one_character(self, word_id: int, index: int) -> str:
+        # TODO: index 위치의 한 글자 확인하는 로직 구현
+        return self._find_word(word_id)["word"][0]
 
 
     def _find_word(self, word_id: int) -> dict:
