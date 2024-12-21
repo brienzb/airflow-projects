@@ -46,7 +46,7 @@ GEOGRAPHY_DICT = {
 
 GITHUB_ISSUE_TITLE = "[GTRP] Google Trend Report ({TARGET_DATE})"
 GITHUB_ISSUE_BODY = f"""
-In time for each country at 10 p.m., Google Trent Keyword Report will be published with this issue comment.
+In time for each country at 10 p.m., Google Trend Keyword Report will be published with this issue comment.
 - Korea
 - France
 - Swiss
